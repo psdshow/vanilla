@@ -69,13 +69,38 @@ export default class QuillEmbedModule extends Module {
 
         ajax.post("/media/scrape", formData)
             .then(result => {
-                if (result.data.type === "site") {
+                switch(result.data.type) {
+                case "site":
                     this.createSiteEmbed(result.data);
+                    break;
+                case "image":
+                    this.createExternalImageEmbed(result.data);
+                    break;
+                default:
+                    this.createVideoEmbed(result.data);
+                    break;
                 }
-                console.log(result);
             }).catch(error => {
                 console.error(error);
             });
+    }
+
+    /**
+     * Create a video embed.
+     *
+     * @param {ScrapeResult} scrapeResult
+     */
+    createVideoEmbed(scrapeResult) {
+
+        const linkEmbed = Parchment.create("embed-video", scrapeResult);
+        const completedBlot = this.currentUploads.get(scrapeResult.url);
+
+        // The loading blot may have been undone/deleted since we created it.
+        if (completedBlot) {
+            completedBlot.replaceWith(linkEmbed);
+        }
+
+        this.currentUploads.delete(scrapeResult.url);
     }
 
     /**
@@ -89,7 +114,7 @@ export default class QuillEmbedModule extends Module {
             photoUrl,
             name,
             body,
-        } = scrapeResult
+        } = scrapeResult;
 
 
         const linkEmbed = Parchment.create("embed-link",
@@ -98,6 +123,30 @@ export default class QuillEmbedModule extends Module {
                 name,
                 linkImage: photoUrl,
                 excerpt: body,
+            }
+        );
+        const completedBlot = this.currentUploads.get(url);
+
+        // The loading blot may have been undone/deleted since we created it.
+        if (completedBlot) {
+            completedBlot.replaceWith(linkEmbed);
+        }
+
+        this.currentUploads.delete(url);
+    }
+
+    createExternalImageEmbed(scrapeResult) {
+        const {
+            url,
+            photoUrl,
+            name,
+        } = scrapeResult;
+
+
+        const linkEmbed = Parchment.create("embed-image",
+            {
+                url: photoUrl,
+                alt: name,
             }
         );
         const completedBlot = this.currentUploads.get(url);

@@ -68,7 +68,7 @@ export default class FileUploader {
         if (event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files.length) {
             event.preventDefault();
             const files = Array
-                .from(event.dataTransfer.files)
+                .from(event.dataTransfer.files);
 
             // Currently only 1 file is supported.
             const mainFile = files[0];

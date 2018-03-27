@@ -26,6 +26,9 @@ const dataTransformers = [
     addTransientKey,
 ];
 
+/**
+ * @type {AxiosInstance}
+ */
 const instance = axios.create({
     baseURL: formatUrl("/api/v2/"),
     transformRequest: dataTransformers,

@@ -7,17 +7,59 @@
 import React from "react";
 import { t } from "@core/utility";
 import * as PropTypes from "prop-types";
-import classNames from 'classnames';
+import QuillEmbedModule from "../QuillEmbedModule";
 import { withEditor, editorContextTypes } from "./EditorProvider";
 import InsertPopover from "./Popover";
 
 export class EmbedPopover extends React.PureComponent {
+
+    /** @type {QuillEmbedModule}*/
+    embedModule;
+
+    /**
+     *
+     */
+    state = {
+        url: "",
+    };
 
     static propTypes = {
         ...editorContextTypes,
         isVisible: PropTypes.bool.isRequired,
         closeMenu: PropTypes.func.isRequired,
         blurHandler: PropTypes.func.isRequired,
+    };
+
+    constructor(props) {
+        super(props);
+        this.embedModule = props.quill.getModule("embed");
+    }
+
+    clearInput() {
+        this.setState({
+            url: "",
+        });
+    }
+
+    /**
+     * Handle a submit button click.
+     *
+     * @param {React.SyntheticEvent} event - The button press event.
+     */
+    buttonClickHandler = (event) => {
+        event.preventDefault();
+        console.log("Click");
+        this.clearInput();
+        this.embedModule.scrapeMedia(this.state.url);
+    };
+
+    /**
+     * Control the inputs value.
+     *
+     * @param {React.ChangeEvent} event - The change event.
+     */
+    inputChangeHandler = (event) => {
+        this.setState({url: event.target.value});
     };
 
     render() {
@@ -28,7 +70,7 @@ export class EmbedPopover extends React.PureComponent {
             <p id="tempId-insertMediaMenu-p" className="insertMedia-description">
                 {t('Paste the URL of the media you want.')}
             </p>
-            <input className="InputBox" placeholder="http://" />
+            <input className="InputBox" placeholder="http://" value={this.state.url} onChange={this.inputChangeHandler}/>
         </React.Fragment>;
 
         const footer = <React.Fragment>
@@ -37,11 +79,12 @@ export class EmbedPopover extends React.PureComponent {
             </a>
 
             <input
-                type="submit"
+                type="button"
                 className="Button Primary insertMedia-insert"
                 value={('Insert')}
                 aria-label={('Insert Media')}
                 onBlur={this.props.blurHandler}
+                onClick={this.buttonClickHandler}
             />
         </React.Fragment>;
 

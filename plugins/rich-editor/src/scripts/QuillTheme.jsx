@@ -51,8 +51,10 @@ export default class VanillaTheme extends Theme {
             ...keyboardBindings.bindings,
         };
 
-        this.options.modules.embed = true;
+        this.quill.embed = this.addModule("embed");
+    }
 
+    init() {
         // Mount react components
         this.mountToolbar();
         this.mountEmojiMenu();

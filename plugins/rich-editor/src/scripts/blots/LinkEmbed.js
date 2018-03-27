@@ -1,5 +1,5 @@
 import { BlockEmbed } from "quill/blots/block";
-import shave from 'shave';
+import Embed from "quill/blots/embed";
 import { setData, getData } from "@core/dom-utility";
 
 export default class LinkEmbedBlock extends BlockEmbed {
@@ -11,8 +11,8 @@ export default class LinkEmbedBlock extends BlockEmbed {
     static PROTOCOL_WHITELIST = ['http', 'https', 'mailto', 'tel'];
 
     static create(data) {
-        // console.log("Video Data: ", data);
         const node = super.create();
+        node.setAttribute("contenteditable", false);
         node.classList.add('embed');
         node.classList.add('embed-link');
         node.classList.add('embedLink');
@@ -28,7 +28,7 @@ export default class LinkEmbedBlock extends BlockEmbed {
             title.innerHTML = data.name;
         }
 
-        let userPhoto = false
+        let userPhoto = false;
         if (data.userPhoto) {
             userPhoto = document.createElement('span');
             userPhoto.classList.add('embedLink-userPhoto');

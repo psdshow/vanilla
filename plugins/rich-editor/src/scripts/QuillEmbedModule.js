@@ -11,6 +11,19 @@ import Parchment from "parchment";
 import FileUploader from "@core/FileUploader";
 import {logError} from "@core/utility";
 import Emitter from "quill/core/emitter";
+import ajax from "@core/ajax";
+
+/**
+ * @typedef {Object} ScrapeResult
+ * @property {any[]} attributes
+ * @property {string} type
+ * @property {string} url
+ * @property {string} body
+ * @property {string} name
+ * @property {string} photoUrl
+ * @property {number} height
+ * @property {number} width
+ */
 
 /**
  * A Quill module for managing insertion of embeds/loading/error states.
@@ -33,12 +46,82 @@ export default class QuillEmbedModule extends Module {
         this.setupSelectionListener();
     }
 
+    /**
+     * Initiate a media scrape, and insert the appropriate embed blots depending on response.
+     *
+     * @param {string} url - The URL to scrape.
+     */
+    scrapeMedia(url) {
+        const formData = new FormData();
+        formData.append("url", url);
+
+        this.quill.insertEmbed(this.lastSelection.index, "embed-loading", {}, Emitter.sources.USER);
+        const [blot] = this.quill.getLine(this.lastSelection.index);
+        this.quill.setSelection(this.lastSelection.index + 1);
+
+        blot.registerDeleteCallback(() => {
+            if (this.currentUploads.has(url)) {
+                this.currentUploads.delete(url);
+            }
+        });
+
+        this.currentUploads.set(url, blot);
+
+        ajax.post("/media/scrape", formData)
+            .then(result => {
+                if (result.data.type === "site") {
+                    this.createSiteEmbed(result.data);
+                }
+                console.log(result);
+            }).catch(error => {
+                console.error(error);
+            });
+    }
+
+    /**
+     * Create a site embed.
+     *
+     * @param {ScrapeResult} scrapeResult
+     */
+    createSiteEmbed(scrapeResult) {
+        const {
+            url,
+            photoUrl,
+            name,
+            body,
+        } = scrapeResult
+
+
+        const linkEmbed = Parchment.create("embed-link",
+            {
+                url,
+                name,
+                linkImage: photoUrl,
+                excerpt: body,
+            }
+        );
+        const completedBlot = this.currentUploads.get(url);
+
+        // The loading blot may have been undone/deleted since we created it.
+        if (completedBlot) {
+            completedBlot.replaceWith(linkEmbed);
+        }
+
+        this.currentUploads.delete(url);
+    }
+
+
+    /**
+     * Setup a selection listener for quill.
+     * @private
+     */
     setupSelectionListener() {
         this.quill.on(Emitter.events.EDITOR_CHANGE, this.handleEditorChange);
     }
 
     /**
      * Handle changes from the editor.
+     * @private
      *
      * @param {string} type - The event type. See {quill/core/emitter}
      * @param {RangeStatic} range - The new range.
@@ -80,7 +163,7 @@ export default class QuillEmbedModule extends Module {
     onImageUploadStart = (file) => {
         this.quill.insertEmbed(this.lastSelection.index, "embed-loading", {}, Emitter.sources.USER);
         const [blot] = this.quill.getLine(this.lastSelection.index);
-        this.insertTrailingNewline();
+        this.quill.setSelection(this.lastSelection.index + 1);
 
         blot.registerDeleteCallback(() => {
             if (this.currentUploads.has(file)) {
@@ -139,6 +222,7 @@ export default class QuillEmbedModule extends Module {
 
     /**
      * Setup the the fake file input for image uploads.
+     * @private
      */
     setupImageUploadButton() {
         const fakeImageUpload = this.quill.container.closest(".richEditor").querySelector(".js-fakeFileUpload");
@@ -153,9 +237,5 @@ export default class QuillEmbedModule extends Module {
             const file = imageUpload.files[0];
             this.fileUploader.uploadFile(file);
         });
-    }
-
-    insertTrailingNewline() {
-        this.quill.setSelection(this.lastSelection.index + 1);
     }
 }

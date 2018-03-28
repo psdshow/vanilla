@@ -75,6 +75,7 @@ $embed-spacing: 6px !default;
     box-shadow: $embedLoader-embedError-shadow;
     padding: $embedLoader-embedError-padding;
     background: $embeded-error_bg;
+    user-select: none;
 
     + .embedLoader-error {
         margin-top: 12px;
@@ -149,6 +150,7 @@ $embed-spacing: 6px !default;
     width: $embedVideo_width;
     max-width: 100%;
     margin: auto;
+    user-select: none;
 
     iframe,
     .embedVideo-iframe {
@@ -215,12 +217,17 @@ $embed-spacing: 6px !default;
     stroke: rgba(0, 0, 0, 0.1);
 }
 
-
 // Embed link
 .embedLink {
     display: block;
     background: #ffffff;
     box-shadow: 0 1px 3px 0 rgba(0,0,0,0.3);
+    user-select: none;
+
+    &::selection,
+    &:active{
+        outline: 4px solid green;
+    }
 
     &,
     &:hover,

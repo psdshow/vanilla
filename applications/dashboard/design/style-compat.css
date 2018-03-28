@@ -995,6 +995,7 @@ body.Categories.isMobile .PageControls.Top {
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
   padding: 15px;
   background: rgba(255, 57, 52, 0.12);
+  user-select: none;
 }
 
 .embedLoader-error + .embedLoader-error {
@@ -1063,6 +1064,7 @@ body.Categories.isMobile .PageControls.Top {
   width: 640px;
   max-width: 100%;
   margin: auto;
+  user-select: none;
 }
 
 .embedVideo iframe,
@@ -1073,6 +1075,7 @@ body.Categories.isMobile .PageControls.Top {
   left: 0;
   height: 100%;
   width: 100%;
+  background-position: center;
 }
 
 .embedVideo:focus .embedVideo-playIcon, .embedVideo:hover .embedVideo-playIcon {
@@ -1113,6 +1116,7 @@ body.Categories.isMobile .PageControls.Top {
   left: 0;
   height: 100%;
   width: 100%;
+  background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
   cursor: pointer;
@@ -1138,6 +1142,11 @@ body.Categories.isMobile .PageControls.Top {
   display: block;
   background: #ffffff;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+  user-select: none;
+}
+
+.embedLink::selection, .embedLink:active {
+  outline: 4px solid green;
 }
 
 .embedLink, .embedLink:hover, .embedLink:focus {

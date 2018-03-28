@@ -8,8 +8,9 @@
 import Module from "quill/core/module";
 import { closeEditorFlyouts } from "./quill-utilities";
 import Parchment from "parchment";
+import EmbedLoadingBlot from "./blots/EmbedLoadingBlot";
 import FileUploader from "@core/FileUploader";
-import {logError} from "@core/utility";
+import { logError, t } from "@core/utility";
 import Emitter from "quill/core/emitter";
 import ajax from "@core/ajax";
 
@@ -39,6 +40,8 @@ export default class QuillEmbedModule extends Module {
     /** @var {RangeStatic} */
     lastSelection = { index: 0, length: 0 };
 
+    pauseSelectionTracking = false;
+
     constructor(quill, options = {}) {
         super(quill, options);
         this.quill = quill;
@@ -55,17 +58,7 @@ export default class QuillEmbedModule extends Module {
         const formData = new FormData();
         formData.append("url", url);
 
-        this.quill.insertEmbed(this.lastSelection.index, "embed-loading", {}, Emitter.sources.USER);
-        const [blot] = this.quill.getLine(this.lastSelection.index);
-        this.quill.setSelection(this.lastSelection.index + 1);
-
-        blot.registerDeleteCallback(() => {
-            if (this.currentUploads.has(url)) {
-                this.currentUploads.delete(url);
-            }
-        });
-
-        this.currentUploads.set(url, blot);
+        this.createLoadingEmbed(url);
 
         ajax.post("/media/scrape", formData)
             .then(result => {
@@ -77,11 +70,23 @@ export default class QuillEmbedModule extends Module {
                     this.createExternalImageEmbed(result.data);
                     break;
                 default:
-                    this.createVideoEmbed(result.data);
+                    this.createErrorEmbed(url, new Error(t("That type of embed is not currently supported.")));
                     break;
                 }
             }).catch(error => {
-                console.error(error);
+                if (error.response && error.response.data && error.response.data.message) {
+                    const message = error.response.data.message;
+
+                    if (message.startsWith("Failed to load URL")) {
+                        this.createErrorEmbed(url, new Error(t("There was an error processing that embed link.")));
+                        return;
+                    } else {
+                        this.createErrorEmbed(url, new Error(message));
+                        return;
+                    }
+                }
+
+                this.createErrorEmbed(url, error);
             });
     }
 
@@ -159,6 +164,54 @@ export default class QuillEmbedModule extends Module {
         this.currentUploads.delete(url);
     }
 
+    /**
+     * Transform an loading embed into an error embed.
+     * @private
+     *
+     * @param {any} lookupKey - The lookup key for the loading embed.
+     * @param {Error} error - The error thrown from the bad upload.
+     */
+    createErrorEmbed = (lookupKey, error) => {
+        logError(error.message);
+
+        if (lookupKey == null) {
+            this.quill.insertEmbed(this.lastSelection.index, "embed-error", { errors: [error] }, Emitter.sources.USER);
+            return;
+        }
+
+        const errorBlot = Parchment.create("embed-error", { errors: [error] }, Emitter.sources.USER);
+        const loadingBlot = this.currentUploads.get(lookupKey);
+
+        // The loading blot may have been undone/deleted since we created it.
+        if (loadingBlot) {
+            loadingBlot.replaceWith(errorBlot);
+        }
+
+        this.currentUploads.delete(lookupKey);
+    };
+
+    /**
+     * Place an loading embed into the document and keep a reference to it.
+     * @private
+     *
+     * @param {any} lookupKey - The lookup key for the loading embed.
+     */
+    createLoadingEmbed = (lookupKey) => {
+        this.pauseSelectionTracking = true;
+        this.quill.insertEmbed(this.lastSelection.index, "embed-loading", {}, Emitter.sources.USER);
+        const [blot] = this.quill.scroll.descendant(EmbedLoadingBlot, this.lastSelection.index);
+
+        this.quill.setSelection(this.lastSelection.index + 1);
+
+        blot.registerDeleteCallback(() => {
+            if (this.currentUploads.has(lookupKey)) {
+                this.currentUploads.delete(lookupKey);
+            }
+        });
+
+        this.currentUploads.set(lookupKey, blot);
+        this.pauseSelectionTracking = false;
+    };
 
     /**
      * Setup a selection listener for quill.
@@ -176,7 +229,7 @@ export default class QuillEmbedModule extends Module {
      * @param {RangeStatic} range - The new range.
      */
     handleEditorChange = (type, range) => {
-        if (range) {
+        if (range && !this.pauseSelectionTracking) {
             if (typeof range.index !== "number") {
                 range = this.quill.getSelection();
             }
@@ -193,35 +246,15 @@ export default class QuillEmbedModule extends Module {
      */
     setupImageUploads() {
         this.fileUploader = new FileUploader(
-            this.onImageUploadStart,
+            this.createLoadingEmbed,
             this.onImageUploadSuccess,
-            this.onImageUploadFailure,
+            this.createErrorEmbed,
         );
 
         this.quill.root.addEventListener('drop', this.fileUploader.dropHandler, false);
         this.quill.root.addEventListener('paste', this.fileUploader.pasteHandler, false);
         this.setupImageUploadButton();
     }
-
-    /**
-     * Handler for the beginning of an image upload.
-     * @private
-     *
-     * @param {File} file - The file being uploaded.
-     */
-    onImageUploadStart = (file) => {
-        this.quill.insertEmbed(this.lastSelection.index, "embed-loading", {}, Emitter.sources.USER);
-        const [blot] = this.quill.getLine(this.lastSelection.index);
-        this.quill.setSelection(this.lastSelection.index + 1);
-
-        blot.registerDeleteCallback(() => {
-            if (this.currentUploads.has(file)) {
-                this.currentUploads.delete(file);
-            }
-        });
-
-        this.currentUploads.set(file, blot);
-    };
 
     /**
      * Handler for a successful image upload.
@@ -239,33 +272,6 @@ export default class QuillEmbedModule extends Module {
             completedBlot.replaceWith(imageEmbed);
         }
 
-        this.currentUploads.delete(file);
-    };
-
-    /**
-     * Handler for a failed image upload.
-     * @private
-     *
-     * @param {File} file - The file being uploaded.
-     * @param {Error} error - The error thrown from the bad upload.
-     */
-    onImageUploadFailure = (file, error) => {
-        logError(error.message);
-
-        if (file == null) {
-            this.quill.insertEmbed(this.lastSelection.index, "embed-error", { errors: [error] }, Emitter.sources.USER);
-            return;
-        }
-
-        const errorBlot = Parchment.create("embed-error", { errors: [error] }, Emitter.sources.USER);
-        const loadingBlot = this.currentUploads.get(file);
-
-        // The loading blot may have been undone/deleted since we created it.
-        if (loadingBlot) {
-            loadingBlot.replaceWith(errorBlot);
-        }
-
-        loadingBlot.replaceWith(errorBlot);
         this.currentUploads.delete(file);
     };
 

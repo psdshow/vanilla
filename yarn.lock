@@ -88,9 +88,9 @@
   version "1.2.2"
   resolved "https://registry.yarnpkg.com/@vanillaforums/eslint-config/-/eslint-config-1.2.2.tgz#451366deb985f69fbb404fddb72418cc682cfa60"
 
-"@vanillaforums/tslint-config@^1.0.2":
-  version "1.0.2"
-  resolved "https://registry.yarnpkg.com/@vanillaforums/tslint-config/-/tslint-config-1.0.2.tgz#f3a04d377bc736ab027bb2bd587b01f1f6eaf332"
+"@vanillaforums/tslint-config@^1.0.3":
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/@vanillaforums/tslint-config/-/tslint-config-1.0.4.tgz#1e718c929fc589e381e1e674c9a95e1e7484cfc1"
   dependencies:
     tslint-config-prettier "^1.10.0"
     tslint-react "^3.5.1"
@@ -1206,7 +1206,7 @@ chalk@^2.3.0:
 
 chardet@^0.4.0:
   version "0.4.2"
-  resolved "https://registry.yarnpkg.com/chardet/-/chardet-0.4.2.tgz#b5473b33dc97c424e5d98dc87d55d4d8a29c8bf2"
+  resolved "https://registry.yaUniqueIDnpkg.com/chardet/-/chardet-0.4.2.tgz#b5473b33dc97c424e5d98dc87d55d4d8a29c8bf2"
 
 chokidar@^1.6.0, chokidar@^1.7.0:
   version "1.7.0"

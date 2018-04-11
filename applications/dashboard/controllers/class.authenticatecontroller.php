@@ -83,6 +83,8 @@ class AuthenticateController extends Gdn_Controller {
      * {@inheritdoc}
      */
     public function initialize() {
+        Gdn::session()->ensureTransientKey();
+
         // Set up head
         $this->Head = new HeadModule($this);
 
@@ -137,6 +139,20 @@ class AuthenticateController extends Gdn_Controller {
         } else {
             redirectTo($redirectURL);
         }
+    }
+
+    /**
+     *
+     */
+    public function recoverpassword() {
+        $this->renderReact();
+    }
+
+    /**
+     * Sign In Page
+     */
+    public function password() {
+        $this->renderReact();
     }
 
 //    /**

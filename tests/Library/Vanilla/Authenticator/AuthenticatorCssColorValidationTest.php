@@ -123,7 +123,7 @@ class AuthenticatorCssColorValidationTest extends TestCase {
     }
 
     /**
-     * Invalid color provider for {@link testValidColors}
+     * Invalid color provider for {@link testInvalidColors}
      *
      * @return array
      */

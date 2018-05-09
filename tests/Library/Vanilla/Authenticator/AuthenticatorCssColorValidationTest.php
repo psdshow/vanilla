@@ -39,6 +39,8 @@ class AuthenticatorCssColorValidationTest extends TestCase {
         self::$bootstrap = new Bootstrap();
         self::$bootstrap->run($container);
 
+        self::$container->rule(CssColorAuthenticator::class);
+
         self::$authenticatorModel = self::$container->get(AuthenticatorModel::class);
         self::$authenticatorModel->registerAuthenticatorClass(CssColorAuthenticator::class);
     }

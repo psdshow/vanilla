@@ -12,9 +12,9 @@ use Vanilla\Authenticator\Authenticator;
 use Vanilla\Authenticator\Exception;
 
 /**
- * Class CssColorAuthenticator.
+ * Class AuthenticatorCssColorValidationTest.
  */
-class CssColorAuthenticator extends Authenticator {
+class AuthenticatorCssColorValidationTest extends Authenticator {
 
     const DEFAULT_CSS_COLOR = '#FFFFFF';
 
@@ -44,7 +44,7 @@ class CssColorAuthenticator extends Authenticator {
      * Reset the current cssColor.
      */
     public static function resetColor() {
-        self::$cssColor = self::DEFAULT_CSS_COLOR
+        self::$cssColor = self::DEFAULT_CSS_COLOR;
     }
 
     /**

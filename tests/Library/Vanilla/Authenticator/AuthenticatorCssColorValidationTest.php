@@ -49,7 +49,7 @@ class AuthenticatorCssColorValidationTest extends TestCase {
      * @inheritdoc
      */
     public static function tearDownAfterClass() {
-        self::$bootstrap->cleanup(self::$container);
+        self::$bootstrap::cleanup(self::$container);
 
         parent::tearDownAfterClass();
     }
